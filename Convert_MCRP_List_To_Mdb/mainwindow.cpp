@@ -3,15 +3,19 @@
 #include "QFileDialog"
 #include "QMessageBox"
 
-//#include <QODBCDriver>
-//#include <QtSql/QSqlDatabase>
-
 #include <QtSql/QSqlDatabase>
 #include <QSqlError>
 #include <QSqlQuery>
 #include <QtSql>
 
+#include <parsingmanager.h>
+
 #define testPrintOutFile 0
+
+static const std::string str_analog = "АНАЛОГИ.";
+static const std::string str_rk = "РАЗОВЫЕ КОМАНДЫ.";
+static const std::string str_DDK = "ДВОИЧНО-ДЕСЯТИЧНЫЙ КОД.";
+static const std::string str_calc = "РАСЧЕТНЫЕ.";
 
 
 MainWindow::MainWindow(QWidget *parent) :
@@ -29,19 +33,12 @@ MainWindow::~MainWindow()
 
 void MainWindow::on_pushButton_clicked()
 {
-    // check opening file
+    // open select dialog source file
     QString txtFileName = QFileDialog::getOpenFileName(0, "Select txt file", "", "");
-    if(txtFileName == "")
+    ParsingManager parser(txtFileName);
+    if( !parser.isCorrectFile)
     {
-        ui->lineEdit->setText("Select corrent file");
-        return;
-    }
-
-    // check condition file
-    in.open(txtFileName.toStdString().c_str());
-    if( !in)
-    {
-        ui->lineEdit_2->setText("Error of opennig file");
+        ui->lineEdit->setText(QString::fromStdString(parser.error_name));
         return;
     }
 
@@ -58,6 +55,7 @@ void MainWindow::on_pushButton_clicked()
             size_t nTire = line.find("-");
 
             // если параметр с ЦМР или Тар
+            // Gт [т] - Суммарный запас топлива [003978]
             if(nTire > n)
             {
                 // type_par
@@ -91,6 +89,7 @@ void MainWindow::on_pushButton_clicked()
                 }
             }
             // если параметр РК
+            // О_БПК25 - Отказ канала БПК 25
             else
             {
                 // type par
@@ -153,23 +152,30 @@ void MainWindow::on_pushButton_clicked()
 
 
 void MainWindow::on_pushButton_2_clicked()
-{    
+{
+    QString mdbFileName = QFileDialog::getOpenFileName(0, "Select database file(*.mdb)", "", "");
+
+    // check selecting file
+    if(mdbFileName == "")
+    {
+        ui->lineEdit_3->setText("File is not select");
+        return;
+    }
+
     // connect to DB
     QSqlDatabase db = QSqlDatabase::addDatabase("QODBC");
-    db.setDatabaseName("Driver={Microsoft Access Driver (*.mdb, *.accdb)}; DSN=''; DBQ=D:\\70М_test.mdb");
+    db.setDatabaseName("Driver={Microsoft Access Driver (*.mdb, *.accdb)}; DSN=''; DBQ=" + mdbFileName);
     if(!db.open())
     {
         ui->lineEdit_3->setText(db.lastError().text());
         return;
     }
     else
-        ui->lineEdit_3->setText("D:\\70М_test.mdb - Connect!");
+        ui->lineEdit_3->setText(mdbFileName + " - Connect!");
 
     // SQL exec
     QSqlQuery* query = new QSqlQuery(db);
     query->prepare("INSERT INTO `00_ТАБЛИЦА ПАРАМЕТРОВ` (Идент_RUS, Замер) VALUES ('test', '12');");
-    //query->bindValue(":type", "someType");
-    //query->bindValue(":number", 123);
     query->exec();
 
     // write vector to bd
