@@ -11,7 +11,7 @@ class Parameter
 {
 public:
    virtual void writeToDB() = 0;
-   virtual int read(std::ifstream in) = 0;
+   virtual int read(std::ifstream& in) = 0;
 
    std::string rus_ident;
    std::string name;
@@ -19,6 +19,10 @@ public:
    std::string sensor;
    std::string first_digit;
    std::string adress;
+
+   std::string readSensorLine(std::string& s);
+   std::string readFirstDigit(std::string& s);
+   std::string readSecondDigit(std::string& s);
 };
 
 
@@ -36,9 +40,9 @@ class AnalogCMR: public Parameter
 {
 public:
     AnalogCMR() {};
-    AnalogCMR(std::ifstream in);
+    AnalogCMR(std::ifstream& in);
     void writeToDB();
-    int read(std::ifstream in);
+    int read(std::ifstream& in);
 
     std::string unit_measure;
     std::string second_digit;
